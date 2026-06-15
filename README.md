@@ -1,17 +1,13 @@
-[定制教程](https://xiabee.eu.org/customize.html) | [刷写教程](https://xiabee.eu.org/install.html)
-
-<div align=center>
-<img src="tr3000.png" height=200px align="center">
-</div>
-
----
-
+感谢大佬的的前人栽树 感谢提供的Fork大佬
+Config 新增 512文件
+workflow 新增512选项
+Part2对应修改好了
 支持 Cudy TR3000 512M
 新增 512M config
 新增 4G QMI / MBIM / RNDIS / CDC / USB Serial 驱动
 Actions 里选择 512M 编译
 
-！！！！仅适合 512M Flash 改版/对应布局机器
+！！！！仅适合 512M Flash 改版/对应布局机器！！！
 不要刷到普通 128M/256M 机器
 刷机不保留配置
 
