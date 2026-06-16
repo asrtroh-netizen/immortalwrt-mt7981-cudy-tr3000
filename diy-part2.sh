@@ -1,44 +1,67 @@
 #!/bin/bash
+
 #
+
 # File name: diy-part2.sh
+
 # Description: OpenWrt DIY script part 2 (After Update feeds)
+
 #
 
 set -e
 
 echo "============================================================"
 echo " DIY PART2: TR3000 512M Full Build"
+echo " PassWall removed for stable build"
 echo "============================================================"
 
 # ===============================
+
 # Rust workaround CI compatibility
+
 # ===============================
+
 if [ -f feeds/packages/lang/rust/Makefile ]; then
-  sed -i 's/ci-llvm=true/ci-llvm=false/g' feeds/packages/lang/rust/Makefile
+sed -i 's/ci-llvm=true/ci-llvm=false/g' feeds/packages/lang/rust/Makefile
 fi
 
 # ===============================
-# Disable unstable packages
-# ===============================
-find package feeds -path '*geoview*' -print || true
+
+# Remove unstable / unwanted packages
 
 # ===============================
+
+rm -rf package/passwall
+rm -rf package/passwall-packages
+rm -rf package/passwall-packages/geoview
+rm -rf package/passwall-packages/*geoview*
+
+# ===============================
+
 # Build date in image filename
+
 # ===============================
+
 if [ -f include/image.mk ] && ! grep -q 'BUILD_DATE := $(shell date +%Y%m%d)' include/image.mk; then
-  perl -0pi -e 's/^(IMG_PREFIX:=.*)$/BUILD_DATE := \$(shell date +%Y%m%d)\n$1/m' include/image.mk
-  perl -0pi -e 's/\$\(SUBTARGET\)/\$(SUBTARGET)-\$(BUILD_DATE)/g' include/image.mk
+perl -0pi -e 's/^(IMG_PREFIX:=.*)$/BUILD_DATE := $(shell date +%Y%m%d)\n$1/m' include/image.mk
+perl -0pi -e 's/$(SUBTARGET)/$(SUBTARGET)-$(BUILD_DATE)/g' include/image.mk
 fi
 
 # ===============================
+
 # Basic path check
+
 # ===============================
+
 test -f target/linux/mediatek/image/filogic.mk
 test -d target/linux/mediatek/dts
 
 # ===============================
+
 # TR3000 512MB DTS injection
+
 # ===============================
+
 rm -rf mod512
 git clone --depth 1 https://github.com/zhuannn/cudy-tr3000-512 mod512
 
@@ -48,17 +71,20 @@ test -n "$(find mod512 -name '*.dts' -print -quit)"
 echo "========== MOD512 MK CHECK =========="
 grep -E "cudy_tr3000-512mb-v1|DEVICE_DTS|IMAGE_SIZE|TARGET_DEVICES" mod512/openwrt-mod/cudy-tr3000-512.mk || true
 
-grep -q "cudy_tr3000-512mb-v1" target/linux/mediatek/image/filogic.mk || \
+grep -q "cudy_tr3000-512mb-v1" target/linux/mediatek/image/filogic.mk || 
 cat mod512/openwrt-mod/cudy-tr3000-512.mk >> target/linux/mediatek/image/filogic.mk
 
-find mod512 -name "*.dts" -exec cp -f {} target/linux/mediatek/dts/ \;
+find mod512 -name "*.dts" -exec cp -f {} target/linux/mediatek/dts/ ;
 
 grep -q "cudy_tr3000-512mb-v1" target/linux/mediatek/image/filogic.mk
 ls target/linux/mediatek/dts/ | grep -q "tr3000.*512"
 
 # ===============================
+
 # Built-in files directories
+
 # ===============================
+
 mkdir -p files/etc/uci-defaults
 mkdir -p files/etc/init.d
 mkdir -p files/etc/vohive
@@ -66,8 +92,11 @@ mkdir -p files/usr/bin
 mkdir -p files/www/luci-static/custom
 
 # ===============================
+
 # Default system settings
+
 # ===============================
+
 cat > files/etc/uci-defaults/90-custom-defaults <<'EOF'
 #!/bin/sh
 
@@ -87,8 +116,11 @@ EOF
 chmod +x files/etc/uci-defaults/90-custom-defaults
 
 # ===============================
+
 # USB / HDD automount default
+
 # ===============================
+
 cat > files/etc/uci-defaults/91-automount <<'EOF'
 #!/bin/sh
 
@@ -106,9 +138,13 @@ EOF
 chmod +x files/etc/uci-defaults/91-automount
 
 # ===============================
+
 # VoHive binary built-in
+
 # TR3000 MT7981 is arm64
+
 # ===============================
+
 VOHIVE_VERSION="v1.3.5"
 VOHIVE_URL="https://github.com/iniwex5/vohive-release/releases/download/${VOHIVE_VERSION}/vohive_${VOHIVE_VERSION}_linux_arm64"
 
@@ -118,12 +154,12 @@ chmod +x files/usr/bin/vohive
 
 cat > files/etc/vohive/config.yaml <<'EOF'
 server:
-  port: 7575
-  debug: false
+port: 7575
+debug: false
 
 web:
-  username: admin
-  password: admin123
+username: admin
+password: admin123
 EOF
 
 cat > files/etc/init.d/vohive <<'EOF'
@@ -133,12 +169,12 @@ START=99
 STOP=10
 
 start() {
-    killall vohive 2>/dev/null
-    nohup /usr/bin/vohive -c /etc/vohive/config.yaml >/tmp/vohive.log 2>&1 &
+killall vohive 2>/dev/null
+nohup /usr/bin/vohive -c /etc/vohive/config.yaml >/tmp/vohive.log 2>&1 &
 }
 
 stop() {
-    killall vohive 2>/dev/null
+killall vohive 2>/dev/null
 }
 EOF
 
@@ -156,54 +192,60 @@ EOF
 chmod +x files/etc/uci-defaults/92-vohive
 
 # ===============================
+
 # LuCI custom corner badge
+
 # ===============================
+
 cat > files/www/luci-static/custom/halox-badge.js <<'EOF'
 (function () {
-  function addBadge() {
-    if (document.getElementById('halox-build-badge')) return;
+function addBadge() {
+if (document.getElementById('halox-build-badge')) return;
 
-    var badge = document.createElement('a');
-    badge.id = 'halox-build-badge';
-    badge.href = 'https://halox.pages.dev/';
-    badge.target = '_blank';
-    badge.rel = 'noopener noreferrer';
-    badge.innerText = '编译自小猫崽 · HaloX';
+```
+var badge = document.createElement('a');
+badge.id = 'halox-build-badge';
+badge.href = 'https://halox.pages.dev/';
+badge.target = '_blank';
+badge.rel = 'noopener noreferrer';
+badge.innerText = '编译自小猫崽 · HaloX';
 
-    badge.style.position = 'fixed';
-    badge.style.right = '16px';
-    badge.style.bottom = '10px';
-    badge.style.zIndex = '99999';
-    badge.style.padding = '6px 10px';
-    badge.style.borderRadius = '10px';
-    badge.style.background = 'rgba(30, 30, 46, 0.72)';
-    badge.style.backdropFilter = 'blur(8px)';
-    badge.style.color = '#b4befe';
-    badge.style.fontSize = '12px';
-    badge.style.lineHeight = '1';
-    badge.style.textDecoration = 'none';
-    badge.style.boxShadow = '0 4px 14px rgba(0,0,0,0.25)';
-    badge.style.border = '1px solid rgba(180,190,254,0.35)';
-    badge.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+badge.style.position = 'fixed';
+badge.style.right = '16px';
+badge.style.bottom = '10px';
+badge.style.zIndex = '99999';
+badge.style.padding = '6px 10px';
+badge.style.borderRadius = '10px';
+badge.style.background = 'rgba(30, 30, 46, 0.72)';
+badge.style.backdropFilter = 'blur(8px)';
+badge.style.color = '#b4befe';
+badge.style.fontSize = '12px';
+badge.style.lineHeight = '1';
+badge.style.textDecoration = 'none';
+badge.style.boxShadow = '0 4px 14px rgba(0,0,0,0.25)';
+badge.style.border = '1px solid rgba(180,190,254,0.35)';
+badge.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
-    badge.onmouseenter = function () {
-      badge.style.background = 'rgba(137, 180, 250, 0.22)';
-      badge.style.color = '#ffffff';
-    };
+badge.onmouseenter = function () {
+  badge.style.background = 'rgba(137, 180, 250, 0.22)';
+  badge.style.color = '#ffffff';
+};
 
-    badge.onmouseleave = function () {
-      badge.style.background = 'rgba(30, 30, 46, 0.72)';
-      badge.style.color = '#b4befe';
-    };
+badge.onmouseleave = function () {
+  badge.style.background = 'rgba(30, 30, 46, 0.72)';
+  badge.style.color = '#b4befe';
+};
 
-    document.body.appendChild(badge);
-  }
+document.body.appendChild(badge);
+```
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', addBadge);
-  } else {
-    addBadge();
-  }
+}
+
+if (document.readyState === 'loading') {
+document.addEventListener('DOMContentLoaded', addBadge);
+} else {
+addBadge();
+}
 })();
 EOF
 
@@ -213,20 +255,20 @@ cat > files/etc/uci-defaults/93-halox-badge <<'EOF'
 JS='/luci-static/custom/halox-badge.js'
 TAG='<script src="/luci-static/custom/halox-badge.js"></script>'
 
-for f in \
-  /usr/lib/lua/luci/view/themes/*/footer.htm \
-  /usr/lib/lua/luci/view/themes/*/footer.ut \
-  /usr/share/ucode/luci/template/themes/*/footer.ut \
-  /usr/share/ucode/luci/template/themes/*/footer.htm
+for f in 
+/usr/lib/lua/luci/view/themes/*/footer.htm 
+/usr/lib/lua/luci/view/themes/*/footer.ut 
+/usr/share/ucode/luci/template/themes/*/footer.ut 
+/usr/share/ucode/luci/template/themes/*/footer.htm
 do
-  [ -f "$f" ] || continue
-  grep -q "$JS" "$f" && continue
+[ -f "$f" ] || continue
+grep -q "$JS" "$f" && continue
 
-  if grep -q '</body>' "$f"; then
-    sed -i "s#</body>#$TAG\n</body>#g" "$f"
-  else
-    echo "$TAG" >> "$f"
-  fi
+if grep -q '</body>' "$f"; then
+sed -i "s#</body>#$TAG\n</body>#g" "$f"
+else
+echo "$TAG" >> "$f"
+fi
 done
 
 exit 0
@@ -235,19 +277,71 @@ EOF
 chmod +x files/etc/uci-defaults/93-halox-badge
 
 # ===============================
-# Full package config
+
+# Remove PassWall related configs from previous 512m.config
+
 # ===============================
+
+sed -i '/CONFIG_PACKAGE_.*passwall/d' .config || true
+sed -i '/CONFIG_PACKAGE_.*PassWall/d' .config || true
+sed -i '/CONFIG_PACKAGE_geoview/d' .config || true
+sed -i '/CONFIG_PACKAGE_luci-app-geoview/d' .config || true
+sed -i '/CONFIG_PACKAGE_xray-core/d' .config || true
+sed -i '/CONFIG_PACKAGE_xray-plugin/d' .config || true
+sed -i '/CONFIG_PACKAGE_v2ray-core/d' .config || true
+sed -i '/CONFIG_PACKAGE_v2ray-plugin/d' .config || true
+sed -i '/CONFIG_PACKAGE_sing-box/d' .config || true
+sed -i '/CONFIG_PACKAGE_trojan-plus/d' .config || true
+sed -i '/CONFIG_PACKAGE_shadowsocks/d' .config || true
+sed -i '/CONFIG_PACKAGE_shadowsocksr/d' .config || true
+sed -i '/CONFIG_PACKAGE_naiveproxy/d' .config || true
+sed -i '/CONFIG_PACKAGE_hysteria/d' .config || true
+sed -i '/CONFIG_PACKAGE_tuic-client/d' .config || true
+sed -i '/CONFIG_PACKAGE_chinadns-ng/d' .config || true
+sed -i '/CONFIG_PACKAGE_dns2socks/d' .config || true
+sed -i '/CONFIG_PACKAGE_haproxy/d' .config || true
+sed -i '/CONFIG_PACKAGE_ipt2socks/d' .config || true
+sed -i '/CONFIG_PACKAGE_microsocks/d' .config || true
+sed -i '/CONFIG_PACKAGE_simple-obfs/d' .config || true
+
 cat >> .config <<'EOF'
 
 # ============================================================
-# Disable unstable packages
+
+# Disable PassWall and unstable packages
+
 # ============================================================
+
+# CONFIG_PACKAGE_luci-app-passwall is not set
+
+# CONFIG_PACKAGE_luci-i18n-passwall-zh-cn is not set
 
 # CONFIG_PACKAGE_geoview is not set
+
 # CONFIG_PACKAGE_luci-app-geoview is not set
 
+# CONFIG_PACKAGE_xray-core is not set
+
+# CONFIG_PACKAGE_xray-plugin is not set
+
+# CONFIG_PACKAGE_v2ray-core is not set
+
+# CONFIG_PACKAGE_v2ray-plugin is not set
+
+# CONFIG_PACKAGE_sing-box is not set
+
+# CONFIG_PACKAGE_trojan-plus is not set
+
+# CONFIG_PACKAGE_naiveproxy is not set
+
+# CONFIG_PACKAGE_hysteria is not set
+
+# CONFIG_PACKAGE_tuic-client is not set
+
 # ============================================================
+
 # 4G / LTE / USB modem full drivers
+
 # ============================================================
 
 CONFIG_PACKAGE_usbutils=y
@@ -295,24 +389,9 @@ CONFIG_PACKAGE_luci-proto-qmi=y
 CONFIG_PACKAGE_luci-proto-mbim=y
 
 # ============================================================
-# PassWall Chinese
-# ============================================================
 
-CONFIG_PACKAGE_luci-app-passwall=y
-CONFIG_PACKAGE_luci-i18n-passwall-zh-cn=y
-
-CONFIG_PACKAGE_chinadns-ng=y
-CONFIG_PACKAGE_dns2socks=y
-CONFIG_PACKAGE_haproxy=y
-CONFIG_PACKAGE_ipt2socks=y
-CONFIG_PACKAGE_microsocks=y
-CONFIG_PACKAGE_simple-obfs=y
-CONFIG_PACKAGE_trojan-plus=y
-CONFIG_PACKAGE_xray-core=y
-CONFIG_PACKAGE_sing-box=y
-
-# ============================================================
 # Nikki Chinese
+
 # ============================================================
 
 CONFIG_PACKAGE_nikki=y
@@ -320,7 +399,9 @@ CONFIG_PACKAGE_luci-app-nikki=y
 CONFIG_PACKAGE_luci-i18n-nikki-zh-cn=y
 
 # ============================================================
+
 # LuCI themes
+
 # ============================================================
 
 CONFIG_PACKAGE_luci-theme-aurora=y
@@ -329,14 +410,18 @@ CONFIG_PACKAGE_luci-theme-argon=y
 CONFIG_PACKAGE_luci-app-argon-config=y
 
 # ============================================================
+
 # Bandix
+
 # ============================================================
 
 CONFIG_PACKAGE_luci-app-bandix=y
 CONFIG_PACKAGE_bandix=y
 
 # ============================================================
+
 # USB / HDD automount
+
 # ============================================================
 
 CONFIG_PACKAGE_block-mount=y
@@ -373,21 +458,15 @@ CONFIG_PACKAGE_kmod-nls-iso8859-1=y
 CONFIG_PACKAGE_kmod-nls-utf8=y
 
 # ============================================================
+
 # Useful LuCI tools
+
 # ============================================================
 
 CONFIG_PACKAGE_luci-app-ttyd=y
 CONFIG_PACKAGE_luci-app-filebrowser=y
 CONFIG_PACKAGE_luci-app-commands=y
 
-EOF
-
-# Strongly remove geoview if it was enabled by dependency/config
-sed -i '/CONFIG_PACKAGE_geoview=y/d' .config
-sed -i '/CONFIG_PACKAGE_luci-app-geoview=y/d' .config
-cat >> .config <<'EOF'
-# CONFIG_PACKAGE_geoview is not set
-# CONFIG_PACKAGE_luci-app-geoview is not set
 EOF
 
 make defconfig
@@ -415,7 +494,7 @@ echo "========== FINAL 4G DRIVER CHECK =========="
 grep -E 'CONFIG_PACKAGE_(kmod-usb-net|kmod-usb-net-qmi-wwan|kmod-usb-wdm|kmod-usb-serial|kmod-usb-serial-option|kmod-usb-serial-wwan|kmod-usb-net-rndis|kmod-usb-net-cdc-ether|kmod-usb-net-cdc-mbim|kmod-usb-net-cdc-ncm|uqmi|umbim|wwan|usb-modeswitch|luci-proto-qmi|luci-proto-mbim)=y' .config || true
 
 echo "========== FINAL APP CHECK =========="
-grep -E 'CONFIG_PACKAGE_(luci-app-passwall|luci-i18n-passwall-zh-cn|nikki|luci-app-nikki|luci-i18n-nikki-zh-cn|luci-theme-aurora|luci-app-aurora-config|luci-theme-argon|luci-app-argon-config|luci-app-bandix|bandix|block-mount|luci-app-diskman|luci-app-hd-idle|luci-app-ttyd|luci-app-filebrowser|luci-app-commands)=y' .config || true
+grep -E 'CONFIG_PACKAGE_(nikki|luci-app-nikki|luci-i18n-nikki-zh-cn|luci-theme-aurora|luci-app-aurora-config|luci-theme-argon|luci-app-argon-config|luci-app-bandix|bandix|block-mount|luci-app-diskman|luci-app-hd-idle|luci-app-ttyd|luci-app-filebrowser|luci-app-commands)=y' .config || true
 
 echo "========== FINAL CUSTOM FILE CHECK =========="
 ls -lh files/usr/bin/vohive
@@ -427,4 +506,5 @@ ls -lh files/etc/uci-defaults/91-automount
 ls -lh files/etc/uci-defaults/92-vohive
 ls -lh files/etc/uci-defaults/93-halox-badge
 
-echo "OK: TR3000 512MB Full Build config + DTS + 4G drivers + apps + VoHive + HaloX badge enabled."
+echo "OK: TR3000 512MB stable build config + DTS + 4G drivers + Nikki + VoHive + HaloX badge enabled."
+
