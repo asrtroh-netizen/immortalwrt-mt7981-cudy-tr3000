@@ -6,49 +6,49 @@ contents: write
 on:
 repository_dispatch:
 types:
-- "Source Code Update"
+- Source Code Update
 
 workflow_dispatch:
 inputs:
 device:
-description: "Build device"
+description: Build device
 required: true
 type: choice
-default: "512M"
+default: 512M
 options:
-- "512M"
-- "256M"
-- "128M"
-- "128M-Ubootmod"
-- "all"
+- 512M
+- 256M
+- 128M
+- 128M-Ubootmod
+- all
 
 ```
-  repo:
-    description: "OpenWrt source repository"
+  source_repo:
+    description: OpenWrt source repository
     required: true
     type: string
-    default: "https://github.com/padavanonly/immortalwrt-mt798x-6.6"
+    default: https://github.com/padavanonly/immortalwrt-mt798x-6.6
 
-  commit:
-    description: "Source commit, leave empty for latest"
+  source_commit:
+    description: Source commit, leave empty for latest
     required: false
     type: string
     default: ""
 
   ssh:
-    description: "Run make menuconfig"
+    description: Run make menuconfig
     required: false
     type: boolean
     default: false
 
   release:
-    description: "Upload firmware to Release"
+    description: Upload firmware to Release
     required: false
     type: boolean
     default: true
 
   prerelease:
-    description: "Mark Release as prerelease"
+    description: Mark Release as prerelease
     required: false
     type: boolean
     default: false
@@ -58,9 +58,9 @@ env:
 DEVICE_INPUT: ${{ github.event.inputs.device || github.event.client_payload.device || '512M' }}
 CCACHE_DIR: /workdir/.ccache
 CCACHE_MAXSIZE: 2G
-REPO_URL: ${{ github.event.inputs.repo || github.event.client_payload.repo || 'https://github.com/padavanonly/immortalwrt-mt798x-6.6' }}
+REPO_URL: ${{ github.event.inputs.source_repo || github.event.client_payload.source_repo || 'https://github.com/padavanonly/immortalwrt-mt798x-6.6' }}
 REPO_BRANCH: openwrt-24.10-6.6
-REPO_COMMIT: ${{ github.event.inputs.commit || '' }}
+REPO_COMMIT: ${{ github.event.inputs.source_commit || github.event.client_payload.source_commit || '' }}
 FEEDS_CONF: feeds.conf.default
 DIY_P1_SH: diy-part1.sh
 DIY_P2_SH: diy-part2.sh
@@ -82,14 +82,7 @@ steps:
   - name: Init Environment
     run: |
       sudo apt-get update -qq
-      sudo apt-get install -y --no-install-recommends \
-        libncurses-dev \
-        build-essential \
-        git \
-        wget \
-        curl \
-        python3 \
-        bzip2
+      sudo apt-get install -y --no-install-recommends libncurses-dev build-essential git wget curl python3 bzip2
       sudo mkdir -p /workdir
       sudo chown $USER:$GROUPS /workdir
 
@@ -135,9 +128,7 @@ steps:
       if [ -f "$GITHUB_WORKSPACE/$FEEDS_CONF" ]; then
         cp -f "$GITHUB_WORKSPACE/$FEEDS_CONF" /workdir/openwrt/feeds.conf.default
       fi
-
       chmod +x "$GITHUB_WORKSPACE/$DIY_P1_SH"
-
       cd /workdir/openwrt
       "$GITHUB_WORKSPACE/$DIY_P1_SH"
 
@@ -152,9 +143,7 @@ steps:
       if [ -f "$GITHUB_WORKSPACE/${CONFIG_FILE}" ]; then
         cp -f "$GITHUB_WORKSPACE/${CONFIG_FILE}" /workdir/openwrt/.config
       fi
-
       chmod +x "$GITHUB_WORKSPACE/$DIY_P2_SH"
-
       cd /workdir/openwrt
       "$GITHUB_WORKSPACE/$DIY_P2_SH"
 
@@ -166,7 +155,6 @@ steps:
     run: |
       SRC="/workdir/openwrt/.config"
       DST="$GITHUB_WORKSPACE/${CONFIG_FILE}"
-
       mkdir -p "$(dirname "$DST")"
       cp -f "$SRC" "$DST"
 
@@ -211,85 +199,7 @@ steps:
   - name: Init Environment
     run: |
       sudo -E apt-get -qq update
-      sudo -E apt-get -qq install \
-        ack \
-        antlr3 \
-        asciidoc \
-        autoconf \
-        automake \
-        autopoint \
-        binutils \
-        bison \
-        build-essential \
-        bzip2 \
-        ccache \
-        clang \
-        cmake \
-        cpio \
-        curl \
-        device-tree-compiler \
-        ecj \
-        fastjar \
-        flex \
-        gawk \
-        gettext \
-        gcc-multilib \
-        g++-multilib \
-        git \
-        gnutls-dev \
-        gperf \
-        haveged \
-        help2man \
-        intltool \
-        lib32gcc-s1 \
-        libc6-dev-i386 \
-        libelf-dev \
-        libglib2.0-dev \
-        libgmp3-dev \
-        libltdl-dev \
-        libmpc-dev \
-        libmpfr-dev \
-        libncurses-dev \
-        libpython3-dev \
-        libreadline-dev \
-        libssl-dev \
-        libtool \
-        libyaml-dev \
-        libz-dev \
-        lld \
-        llvm \
-        lrzsz \
-        mkisofs \
-        msmtp \
-        nano \
-        ninja-build \
-        p7zip \
-        p7zip-full \
-        patch \
-        pkgconf \
-        python3 \
-        python3-pip \
-        python3-ply \
-        python3-docutils \
-        python3-pyelftools \
-        qemu-utils \
-        re2c \
-        rsync \
-        scons \
-        squashfs-tools \
-        subversion \
-        swig \
-        texinfo \
-        uglifyjs \
-        upx-ucl \
-        unzip \
-        vim \
-        wget \
-        xmlto \
-        xxd \
-        zlib1g-dev \
-        zstd
-
+      sudo -E apt-get -qq install ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache clang cmake cpio curl device-tree-compiler ecj fastjar flex gawk gettext gcc-multilib g++-multilib git gnutls-dev gperf haveged help2man intltool lib32gcc-s1 libc6-dev-i386 libelf-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses-dev libpython3-dev libreadline-dev libssl-dev libtool libyaml-dev libz-dev lld llvm lrzsz mkisofs msmtp nano ninja-build p7zip p7zip-full patch pkgconf python3 python3-pip python3-ply python3-docutils python3-pyelftools qemu-utils re2c rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev zstd
       sudo timedatectl set-timezone "$TZ"
       sudo mkdir -p /workdir
       sudo chown $USER:$GROUPS /workdir
@@ -482,4 +392,3 @@ steps:
       retain_days: 0
       keep_minimum_runs: 9
 ```
-
