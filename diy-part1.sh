@@ -13,25 +13,47 @@ echo "============================================================"
 mkdir -p package
 
 # ============================================================
-# GitHub clone helper
-# Proxy first, original URL fallback
+# Download GitHub repo helper
+# Try tar.gz first, git clone fallback
 # ============================================================
 
-GH_PROXY="https://gh-proxy.com/"
-
-clone_repo() {
-  local repo="$1"
-  local dir="$2"
+download_repo() {
+  local owner="$1"
+  local repo="$2"
+  local dir="$3"
 
   echo "============================================================"
-  echo "Clone $repo"
-  echo "To    $dir"
+  echo "Download ${owner}/${repo}"
+  echo "To       ${dir}"
   echo "============================================================"
 
   rm -rf "$dir"
+  mkdir -p "$dir"
 
-  git clone --depth=1 "${GH_PROXY}${repo}" "$dir" || \
-  git clone --depth=1 "$repo" "$dir"
+  local ok="0"
+
+  for branch in main master; do
+    local url="https://codeload.github.com/${owner}/${repo}/tar.gz/refs/heads/${branch}"
+    local tmp="/tmp/${repo}-${branch}.tar.gz"
+
+    echo "Try: $url"
+
+    if curl -fsSL --retry 3 --connect-timeout 20 "$url" -o "$tmp"; then
+      tar -xzf "$tmp" -C "$dir" --strip-components=1
+      rm -f "$tmp"
+      ok="1"
+      echo "OK: ${owner}/${repo} branch ${branch}"
+      break
+    fi
+
+    rm -f "$tmp"
+  done
+
+  if [ "$ok" != "1" ]; then
+    echo "Tarball download failed, try git clone fallback"
+    rm -rf "$dir"
+    git clone --depth=1 "https://github.com/${owner}/${repo}.git" "$dir"
+  fi
 }
 
 # ============================================================
@@ -62,31 +84,31 @@ rm -rf package/openwrt-bandix
 # PassWall
 # ============================================================
 
-clone_repo "https://github.com/xiaorouji/openwrt-passwall.git" "package/passwall"
-clone_repo "https://github.com/xiaorouji/openwrt-passwall-packages.git" "package/passwall-packages"
+download_repo "Openwrt-Passwall" "openwrt-passwall" "package/passwall"
+download_repo "Openwrt-Passwall" "openwrt-passwall-packages" "package/passwall-packages"
 
 # ============================================================
 # Nikki
 # ============================================================
 
-clone_repo "https://github.com/nikkinikki-org/OpenWrt-nikki.git" "package/nikki"
+download_repo "nikkinikki-org" "OpenWrt-nikki" "package/nikki"
 
 # ============================================================
 # LuCI Themes: Aurora / Argon
 # ============================================================
 
-clone_repo "https://github.com/eamonxg/luci-theme-aurora.git" "package/luci-theme-aurora"
-clone_repo "https://github.com/eamonxg/luci-app-aurora-config.git" "package/luci-app-aurora-config"
+download_repo "eamonxg" "luci-theme-aurora" "package/luci-theme-aurora"
+download_repo "eamonxg" "luci-app-aurora-config" "package/luci-app-aurora-config"
 
-clone_repo "https://github.com/jerrykuku/luci-theme-argon.git" "package/luci-theme-argon"
-clone_repo "https://github.com/jerrykuku/luci-app-argon-config.git" "package/luci-app-argon-config"
+download_repo "jerrykuku" "luci-theme-argon" "package/luci-theme-argon"
+download_repo "jerrykuku" "luci-app-argon-config" "package/luci-app-argon-config"
 
 # ============================================================
 # Bandix
 # ============================================================
 
-clone_repo "https://github.com/timsaya/luci-app-bandix.git" "package/luci-app-bandix"
-clone_repo "https://github.com/timsaya/openwrt-bandix.git" "package/openwrt-bandix"
+download_repo "timsaya" "luci-app-bandix" "package/luci-app-bandix"
+download_repo "timsaya" "openwrt-bandix" "package/openwrt-bandix"
 
 # ============================================================
 # Remove git metadata from local packages
