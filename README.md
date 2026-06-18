@@ -2,8 +2,10 @@
 
 
 
+<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/15feaff7-49f2-4927-888f-7ac2258ba5ff" />
 
 # Cudy TR3000 ImmortalWrt Auto Build 🐱
+
 > 给 Cudy TR3000 准备的一套 ImmortalWrt 自动编译仓库。
 > 小猫崽出品，主打一个：能编、能刷、别乱刷。😼
 
@@ -13,23 +15,19 @@
 
 这是一个基于 GitHub Actions 的 ImmortalWrt 自动编译项目，主要用于 Cudy TR3000 v1 系列设备。
 
-目前计划支持：
+本仓库当前主要维护：
 
 | 版本   | 状态 | 说明                   |
 | ---- | -: | -------------------- |
-| 128M |  ✅ | 原版设备配置               |
-| 256M |  ✅ | 原版改版配置               |
+| 256M |  ✅ | 原版基础上的改版配置           |
 | 512M |  ✅ | 额外注入 512M DTS / 分区配置 |
 
 选择 `all` 时，会自动编译：
 
 ```text
-128M
 256M
 512M
 ```
-
-不会再编译 `128M-Ubootmod`。
 
 ---
 
@@ -38,7 +36,6 @@
 不同 Flash 容量的固件不要混刷。
 
 ```text
-128M 设备刷 128M
 256M 设备刷 256M
 512M 改版设备刷 512M
 ```
@@ -61,14 +58,14 @@ mt7981b-cudy-tr3000-512mb-v1.dts
 IMAGE_SIZE := 520000k
 ```
 
-当编译 `128M` 或 `256M` 时，不会注入 512M DTS。
+当编译 `256M` 时，不会注入 512M DTS。
 
 也就是说：
 
 ```text
-128M / 256M：走原版配置
+256M：走原版改版配置
 512M：走 512M 专用配置
-all：分别编译 128M、256M、512M
+all：分别编译 256M、512M
 ```
 
 ---
@@ -110,19 +107,14 @@ Huawei NCM 类模块
 
 ### 3. 主题
 
-保留原版已有主题，并新增：
-
-```text
-luci-theme-argon
-luci-app-argon-config
-```
-
-同时保留：
+保留原版已有主题：
 
 ```text
 luci-theme-aurora
 luci-app-aurora-config
 ```
+
+同时保留原版已有的 Bandix 相关组件。
 
 ---
 
@@ -159,7 +151,6 @@ Actions → ImmortalWrt Builder → Run workflow
 选择设备：
 
 ```text
-128M
 256M
 512M
 all
@@ -168,8 +159,15 @@ all
 推荐：
 
 ```text
-单独测试：先选 512M
+单独测试：先选 256M 或 512M
 批量出包：选 all
+```
+
+`all` 只会编译：
+
+```text
+256M
+512M
 ```
 
 ---
@@ -187,7 +185,7 @@ diy-part1.sh
 ```
 
 feeds 更新前执行。
-用于拉取额外主题包等内容。
+用于保留原版 Aurora / Bandix 等内容。
 
 ```text
 diy-part2.sh
@@ -205,7 +203,6 @@ feeds 更新后执行。
 ```
 
 ```text
-config/128m.config
 config/256m.config
 config/512m.config
 ```
@@ -221,7 +218,6 @@ config/512m.config
 常见文件名会包含：
 
 ```text
-128m
 256m
 512mb
 sysupgrade
@@ -285,7 +281,6 @@ P3TERX Actions-OpenWrt
 padavanonly/immortalwrt-mt798x-6.6
 zhuannn/cudy-tr3000-512
 eamonxg/luci-theme-aurora
-jerrykuku/luci-theme-argon
 timsaya/luci-app-bandix
 ```
 
@@ -301,7 +296,8 @@ timsaya/luci-app-bandix
 
 刷机有风险，操作需谨慎。
 
-因为刷错固件、断电、选错容量、手滑、猫踩键盘造成的问题，请自行承担。
+因刷错固件、断电、选错容量、手滑、猫踩键盘造成的问题，请自行承担。
+
 
 
 
